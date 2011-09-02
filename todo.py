@@ -1,21 +1,20 @@
 #!/usr/bin/python
 import argparse, re, os
-import fileinput,sys
+import fileinput,sys, datetime
 
 
 def parsetask(line):
 	done, line = parsedone( line )
 
-	if re.match(r' *[\-xX ] ', line):
-		line = re.sub(r' *[\-xX ] ', "", line)
+	if re.match(r'\A *[\-xX ] ', line):
+		line = re.sub(r'\A *[\-xX ] ', "", line)
 
 	return done, line
 
 def parsedone(line):
 	done = False
 
-	if re.match(r' *[xX] ', line):
-		line = re.sub(r' *[xX] ', "", line)
+	if re.match(r'\A *[xX] ', line):
 		done = True
 
 	return done, line
@@ -54,6 +53,15 @@ def marklinedone(furl, lineno):
 		sys.stdout.write(line)
 
 
+def removedone(furl, linenums):
+	for line in fileinput.input(furl, inplace=1):
+		if fileinput.filelineno() in linenums:
+			line = ""
+		
+		sys.stdout.write(line)
+
+
+
 
 class Task(object):
 	"""docstring for Task"""
@@ -64,13 +72,20 @@ class Task(object):
 		self.subtasks = []
 
 
-def add_task(text, furl):
-	if os.path.isfile(furl):
-		f = open(furl, 'a')
+def add_task(args, furl):
+	f = open(furl, 'a')
+	if len(args): 
+		f.write('- '+str.join(' ',args)+'\n')
 	else:
-		f = open(furl, 'w')
-	
-	f.write('- '+str.join(' ',text)+'\n')
+		print 'Add Mode (leave field blank to quit)'
+		while True:
+			tasktext = raw_input('add> ')
+			tasktext = tasktext.strip()
+			if tasktext.lower() in ('done', '', 'quit', 'exit'):
+				break
+			
+			f.write('- '+tasktext+'\n')
+
 	f.close()
 
 def list_tasks(furl):
@@ -95,6 +110,36 @@ def list_tasks(furl):
 		if t.subtasks:
 			print ""
 	f.close()
+
+def archive_tasks(furl, doneurl):
+	f = open(furl, 'r')
+	tasklist = parsefile(f)
+	f.close()
+	donelist = []
+	date = datetime.date.today()
+	datestr = date.strftime('%d-%b-%Y')
+
+	#make done list
+	for t in tasklist:
+		if t.done:
+			donelist.append(t)
+	
+	#add done to done.txt
+	f = open(doneurl, 'a')
+	for t in donelist:
+		f.write(datestr +' '+ t.task + '\n')
+	f.close()
+
+	#remove done from todo.txt
+	nums = []
+	for t in donelist:
+		nums.append(t.line)
+	removedone(furl, nums)
+
+
+
+
+
 
 
 def do_task(text, furl):
@@ -121,27 +166,50 @@ def main():
 	parser = argparse.ArgumentParser(description='Task command line utility')
 
 	group = parser.add_mutually_exclusive_group()
-	group.add_argument('-g', '--global', dest='globaltask', action='store_true',
-			help='force use of users global todo.txt')
-	group.add_argument('-l', '--local', dest='localtask', action='store_true',
-			help='force use of users global todo.txt')
 	
-	parser.add_argument('command', metavar='<command>',
-			choices=['add', 'a', 'do', 'list', 'ls'], default='ls', nargs='?', action='store')
+	group.add_argument('-g', '--global',
+			dest='globaltask',
+			action='store_true',
+			help='force use of users global todo.txt'
+			)
+
+	group.add_argument('-l', '--local',
+			dest='localtask',
+			action='store_true',
+			help='force use of directories local todo.txt'
+			)
+
+	parser.add_argument('command',
+			metavar='<command>',
+			choices=['add', 'a', 'do', 'list', 'ls', 'archive'],
+			default='ls', nargs='?',
+			action='store'
+			)
 	
-	parser.add_argument('args', metavar='<args>', nargs='*', type=str,
-                   help='an integer for the accumulator')
+	parser.add_argument('args',
+			metavar='<args>',
+			nargs='*', type=str,
+			help='depends on command'
+			)
 
 	args = parser.parse_args()
 
 	if args.localtask:
 		fileurl = 'todo.txt'
+		doneurl = 'done.txt'
 	elif args.globaltask:
-		fileurl = '~/todo.txt'
+		fileurl = '/Users/dom/todo.txt'
+		doneurl = '/Users/dom/done.txt'
 	elif os.path.isfile('todo.txt'):
 		fileurl = 'todo.txt'
+		doneurl = 'done.txt'
 	else:
-		fileurl = '~/todo.txt'
+		fileurl = '/Users/dom/todo.txt'
+		doneurl = '/Users/dom/done.txt'
+
+	if not os.path.isfile(fileurl):
+		f = open(fileurl, 'w')
+		f.close()
 
 	if args.command in ('ls','list'):
 		list_tasks(fileurl)
@@ -151,6 +219,9 @@ def main():
 	
 	if args.command == 'do':
 		do_task(args.args, fileurl)
+
+	if args.command == 'archive':
+		archive_tasks(fileurl, doneurl)
 	
 
 if __name__ == '__main__':
