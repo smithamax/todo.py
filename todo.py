@@ -1,6 +1,40 @@
 #!/usr/bin/python
-import argparse, re, os
+import argparse, re, os, ConfigParser as configparser
 import fileinput,sys, datetime
+
+def get_option(parser, section, option):
+	try:
+		value = parser.get(section, option)
+
+	except configparser.NoSectionError:
+		parser.add_section(section)
+		value = get_option(parser, section, option)
+	
+	return value
+	
+
+def load_config(configfile='~/.todoconfig'):
+	loc = {}
+	glob = {}
+
+	fix = os.path.expanduser
+
+	parser = configparser.ConfigParser({'dir':'~','filename':'TODO','donefilename':'DONE'})
+	parser.read(fix(configfile))
+
+
+	glob['dir'] = fix(get_option(parser, 'global', 'dir'))
+	glob['filename'] = fix(get_option(parser, 'global', 'filename'))
+	glob['donefilename'] = fix(get_option(parser, 'global', 'donefilename'))
+
+
+	loc['filename'] = fix(get_option(parser, 'local', 'filename'))
+	loc['donefilename'] = fix(get_option(parser, 'local', 'donefilename'))
+	loc['dir'] = os.getcwd();
+
+	return glob, loc
+
+
 
 
 def parsetask(line):
@@ -111,7 +145,9 @@ def list_tasks(furl):
 			print ""
 	f.close()
 
-def archive_tasks(furl, doneurl):
+def archive_tasks(options):
+	furl = os.path.join(options['dir'], options['filename'])
+	doneurl = os.path.join(options['dir'], options['donefilename'])
 	f = open(furl, 'r')
 	tasklist = parsefile(f)
 	f.close()
@@ -194,34 +230,34 @@ def main():
 
 	args = parser.parse_args()
 
-	if args.localtask:
-		fileurl = 'todo.txt'
-		doneurl = 'done.txt'
-	elif args.globaltask:
-		fileurl = '/Users/dom/todo.txt'
-		doneurl = '/Users/dom/done.txt'
-	elif os.path.isfile('todo.txt'):
-		fileurl = 'todo.txt'
-		doneurl = 'done.txt'
-	else:
-		fileurl = '/Users/dom/todo.txt'
-		doneurl = '/Users/dom/done.txt'
+	glob, loc = load_config()
+	options = {}
 
-	if not os.path.isfile(fileurl):
-		f = open(fileurl, 'w')
+	if args.localtask:
+		options = loc
+	elif args.globaltask:
+		options = glob
+	elif os.path.isfile(loc['filename']):
+		options = loc
+	else:
+		options = glob
+
+	path = os.path.join(options['dir'], options['filename'])
+	if not os.path.isfile(path):
+		f = open(path, 'w')
 		f.close()
 
 	if args.command in ('ls','list'):
-		list_tasks(fileurl)
+		list_tasks(path)
 	
 	if args.command in ('add','a'):
-		add_task(args.args, fileurl)
+		add_task(args.args, path)
 	
 	if args.command == 'do':
-		do_task(args.args, fileurl)
+		do_task(args.args, path)
 
 	if args.command == 'archive':
-		archive_tasks(fileurl, doneurl)
+		archive_tasks(options)
 	
 
 if __name__ == '__main__':
