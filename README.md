@@ -9,21 +9,19 @@ Still needs a little work but mostly functional
 Installation
 ------------
 
-fairly standard.
+Fairly standard.
 
-```
-$ git clone https://Smithamax@github.com/Smithamax/todo.py.git todo
-$ cd todo
-$ chmod 755 todo.py
+    $ git clone https://Smithamax@github.com/Smithamax/todo.py.git todo
+    $ cd todo
+    $ chmod 755 todo.py
 
-```
 then
 
-`$ ln -s $PWD/todo.py ~/bin/todo`
+    $ ln -s $PWD/todo.py ~/bin/todo
 
 or
 
-`$ echo 'alias todo='$PWD'/todo.py' >> ~/.bash_profile`
+    $ echo 'alias todo='$PWD'/todo.py' >> ~/.bash_profile
 
 and restart terminal.
 
@@ -35,7 +33,7 @@ usage: `todo [-h] [-g | -l] [<command>] [<args> [<args> ...]]`
 
 using the `-l` flag will force the creation of a TODO in the current working directory
 using the `-g` flag will force the use of your global TODO file
-you should edit the source to set your global file (currently set to `/Users/dom/todo.txt`)
+
 
 if these flags are omitted todo.py will look in the current directory then fall back to the global todo file
 
@@ -58,14 +56,14 @@ mark task as done
 
 move tasks marked as done to DONE file
 
-###The TODO File##
+###The TODO File###
 
 TODO files are simple text files, each line is a task
 indented lines are sub tasks (limited support so far)
 
 `todo` prepends a `- ` to each task for niceness but this is not required.
 
-done tasks are perpended with `X `, this replaces `- `.
+Done tasks are perpended with `X `, this replaces `- `.
 
 
 Configuration
@@ -74,7 +72,7 @@ Configuration
 By default todo.py works without a config file.
 However if you wish to set a custom the behavior there are a few options.
 
-example ~/.todoconfig
+Example `~/.todoconfig`
 
 ```
 [global]
@@ -88,9 +86,9 @@ donefilename: DONE
 
 ```
 
-you can also give a directory its own local settings
+You can also give a directory its own local settings.
 
-/some/directory/.todo
+Example `/some/directory/.todo`
 
 ```
 [local]
@@ -99,13 +97,13 @@ donefilename: DONE
 
 ```
 
-you will still need to force the initial creation of the local file with `todo -l`
+You will still need to force the initial creation of the local file with `todo -l`
 
 
 Examples
 --------
 
-these assume the you have linked to todo.py in your bin folder as todo
+These assume the you have linked to todo.py in your bin folder as todo
 
     $ todo add this is a task
 
