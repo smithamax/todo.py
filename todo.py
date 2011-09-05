@@ -1,6 +1,6 @@
 #!/usr/bin/python
 import argparse, re, os, ConfigParser as configparser
-import fileinput,sys, datetime
+import fileinput, sys, datetime
 
 def get_option(parser, section, option):
 	try:
@@ -231,6 +231,9 @@ def main():
 	args = parser.parse_args()
 
 	glob, loc = load_config()
+	if os.path.isfile('.todo'):
+		dontcare, loc = load_config('.todo')
+	
 	options = {}
 
 	if args.localtask:
